@@ -1,0 +1,21 @@
+LBS NurseLink Medical Services Division Build Stamp
+===================================================
+
+Release: 0.1.0
+Source baseline: NurseLink v5.5.9
+Status: DEVELOPMENT
+Forked UTC: 2026-09-11
+Environment: local only
+
+Verification
+------------
+PHP syntax: PASSED
+Composer metadata: VALID
+Frontend production build: PASSED
+Backend integration tests: PENDING LOCAL DEPENDENCY INSTALL
+Clinical and privacy governance review: REQUIRED BEFORE DEPLOYMENT
+
+Designation
+-----------
+This is an isolated development fork. It is not an approved clinical system,
+does not contain production data, and must not replace the live NurseLink app.

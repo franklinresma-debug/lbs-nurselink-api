@@ -1,0 +1,8 @@
+LBS NurseLink Medical Services Division
+Build: LBS-NL-MSD-0.1.0
+Source baseline: NurseLink v5.5.9
+Edition: Independent local development fork
+Database: lbs_nurselink_local
+Sessions/Cache/Queue: database
+Private storage: isolated local filesystem
+Release label: 0.1.0-development

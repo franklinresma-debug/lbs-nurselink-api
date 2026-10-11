@@ -1,0 +1,21 @@
+/.env
+/vendor/
+/storage/*.key
+/storage/app/private/*
+/storage/app/nurselink-private/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*.php
+!.gitignore
+
+.env.save
+error_log
+
+# Local OCR runtimes and generated extraction/preview data
+/.venv-ocr/
+/storage/app/nurselink-page-extraction/*
+/storage/app/nurselink-smart-registration-previews/*
+/storage/app/ocr-models/*
+/storage/app/public/*

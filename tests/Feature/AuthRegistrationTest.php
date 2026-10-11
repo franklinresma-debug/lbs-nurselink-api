@@ -1,0 +1,133 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Role;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class AuthRegistrationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_public_registration_status_never_exposes_the_pilot_allowlist(): void
+    {
+        config()->set('registration.mode', 'pilot');
+        config()->set('registration.pilot_emails', ['private-pilot@example.com']);
+
+        $response = $this->getJson('/api/registration-status')
+            ->assertSuccessful()
+            ->assertJsonPath('data.mode', 'pilot')
+            ->assertJsonPath('data.accepting_registrations', true);
+
+        $this->assertStringNotContainsString('private-pilot@example.com', $response->getContent());
+    }
+
+    public function test_registration_normalizes_email_and_assigns_applicant_role(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        config()->set('registration.terms_version', 'terms-test-v1');
+        config()->set('registration.privacy_version', 'privacy-test-v1');
+
+        $response = $this->postJson('/register', [
+            'name' => 'Maria Santos',
+            'email' => '  MARIA@EXAMPLE.COM ',
+            'password' => 'Very-Strong-Password-2026!',
+            'password_confirmation' => 'Very-Strong-Password-2026!',
+            'terms_accepted' => true,
+            'privacy_accepted' => true,
+        ]);
+
+        $response->assertSuccessful();
+        $this->assertDatabaseHas('users', [
+            'email' => 'maria@example.com',
+            'terms_version' => 'terms-test-v1',
+            'privacy_version' => 'privacy-test-v1',
+        ]);
+        $this->assertTrue(Role::where('code', 'applicant')->firstOrFail()->users()->where('email', 'maria@example.com')->exists());
+    }
+
+    public function test_registration_requires_terms_and_privacy_consent(): void
+    {
+        $this->postJson('/register', [
+            'name' => 'Consent Missing',
+            'email' => 'consent-missing@example.com',
+            'password' => 'Very-Strong-Password-2026!',
+            'password_confirmation' => 'Very-Strong-Password-2026!',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['terms_accepted', 'privacy_accepted']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'consent-missing@example.com']);
+    }
+
+    public function test_pilot_registration_accepts_only_allowlisted_email_addresses(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        config()->set('registration.mode', 'pilot');
+        config()->set('registration.pilot_emails', ['invited@example.com']);
+
+        $this->postJson('/register', [
+            'name' => 'Not Invited',
+            'email' => 'other@example.com',
+            'password' => 'Very-Strong-Password-2026!',
+            'password_confirmation' => 'Very-Strong-Password-2026!',
+            'terms_accepted' => true,
+            'privacy_accepted' => true,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('email');
+
+        $this->postJson('/register', [
+            'name' => 'Invited Pilot',
+            'email' => ' INVITED@EXAMPLE.COM ',
+            'password' => 'Very-Strong-Password-2026!',
+            'password_confirmation' => 'Very-Strong-Password-2026!',
+            'terms_accepted' => true,
+            'privacy_accepted' => true,
+        ])->assertSuccessful();
+
+        $this->assertDatabaseHas('users', ['email' => 'invited@example.com']);
+    }
+
+    public function test_closed_registration_rejects_new_accounts(): void
+    {
+        config()->set('registration.mode', 'closed');
+
+        $this->postJson('/register', [
+            'name' => 'Closed Registration',
+            'email' => 'closed@example.com',
+            'password' => 'Very-Strong-Password-2026!',
+            'password_confirmation' => 'Very-Strong-Password-2026!',
+            'terms_accepted' => true,
+            'privacy_accepted' => true,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('email');
+
+        $this->assertDatabaseMissing('users', ['email' => 'closed@example.com']);
+    }
+
+    public function test_public_registration_is_rate_limited_by_email(): void
+    {
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $this->postJson('/register', [
+                'name' => 'Rate Limit Test',
+                'email' => 'rate-limited@example.com',
+                'password' => 'short',
+                'password_confirmation' => 'short',
+                'terms_accepted' => true,
+                'privacy_accepted' => true,
+            ])->assertUnprocessable();
+        }
+
+        $this->postJson('/register', [
+            'name' => 'Rate Limit Test',
+            'email' => 'rate-limited@example.com',
+            'password' => 'short',
+            'password_confirmation' => 'short',
+            'terms_accepted' => true,
+            'privacy_accepted' => true,
+        ])->assertStatus(429)
+            ->assertHeader('Retry-After')
+            ->assertJsonPath('message', 'Too many registration attempts. Please wait before trying again.');
+    }
+}
