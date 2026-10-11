@@ -4,7 +4,7 @@ Production backend API for LBS NurseLink, served under https://lbs.amsertech.com
 
 ## Stack
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - Laravel Fortify
 - Laravel Sanctum
