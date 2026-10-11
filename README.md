@@ -15,11 +15,11 @@ Production backend API for LBS NurseLink, served under https://lbs.amsertech.com
 
 ## Local Setup
 
-`    composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan serve`
+    composer install
+    cp .env.example .env
+    php artisan key:generate
+    php artisan migrate
+    php artisan serve
 
 Update .env with local database credentials, local frontend URL, Sanctum domains, and mail settings.
 
