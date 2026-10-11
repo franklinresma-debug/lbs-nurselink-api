@@ -26,5 +26,7 @@ jobs:
         run: composer validate --strict --no-check-publish
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Security audit
+        run: composer audit --no-interaction
       - name: PHP syntax check
         run: find app config database routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
