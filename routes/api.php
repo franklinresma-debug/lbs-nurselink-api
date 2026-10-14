@@ -1190,3 +1190,7 @@ Route::middleware(['auth:sanctum','verified','active.user',\App\Http\Middleware\
  Route::get('/',[\App\Http\Controllers\Api\ApplicationSupportController::class,'index']);
  Route::post('/{id}',[\App\Http\Controllers\Api\ApplicationSupportController::class,'assist'])->whereNumber('id');
 });
+
+
+Route::middleware(['auth:sanctum','verified','active.user',\App\Http\Middleware\EnsureNurseLinkAdminPermission::class,'throttle:60,1'])
+ ->post('/nurselink/admin/registration-support/ocr-review',[\App\Http\Controllers\Api\OcrSandboxController::class,'handle']);
